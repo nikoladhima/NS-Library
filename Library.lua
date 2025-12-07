@@ -1,6 +1,7 @@
-local cloneref = (cloneref or clonereference or function(instance: any)
-    return instance
-end)
+local cloneref = cloneref or clone_ref or clonereference or clone_reference or function(...)
+	return (...)
+end
+
 local CoreGui: CoreGui = cloneref(game:GetService("CoreGui"))
 local Players: Players = cloneref(game:GetService("Players"))
 local RunService: RunService = cloneref(game:GetService("RunService"))
@@ -13,14 +14,24 @@ local TweenService: TweenService = cloneref(game:GetService("TweenService"))
 local getgenv = getgenv or function()
     return shared
 end
-local setclipboard = setclipboard or nil
-local protectgui = protectgui or (syn and syn.protect_gui) or function() end
-local gethui = gethui or function()
+
+local setclipboard = setclipboard or set_clipboard or writeclipboard or write_clipboard or nil
+local protectgui = protectgui or (syn and syn.protect_gui) or function(...)
+    return (...)
+end
+
+local gethui = gethui or get_hui or gethiddenui or get_hidden_ui or function()
     return CoreGui
+end
+
+local function Create(Type : string)
+	return cloneref(Instance.new(Type))
 end
 
 local LocalPlayer = Players.LocalPlayer or Players.PlayerAdded:Wait()
 local Mouse = cloneref(LocalPlayer:GetMouse())
+
+local CurrentCamera = workspace.CurrentCamera
 
 local Labels = {}
 local Buttons = {}
@@ -49,6 +60,8 @@ local CustomImageManagerAssets = {
 }
 do
     local function RecursiveCreatePath(Path: string, IsFile: boolean?)
+        local isfolder = isfolder or is_folder
+        local makefolder = makefolder or make_folder or createfolder or create_folder
         if not isfolder or not makefolder then
             return
         end
@@ -443,7 +456,7 @@ local function ApplyTextScale(TextSize)
 end
 
 local function WaitForEvent(Event, Timeout, Condition)
-    local Bindable = Instance.new("BindableEvent")
+    local Bindable = Create("BindableEvent")
     local Connection = Event:Once(function(...)
         if not Condition or typeof(Condition) == "function" and Condition(...) then
             Bindable:Fire(true)
@@ -1204,25 +1217,25 @@ local function FillInstance(Table: { [string]: any }, Instance: GuiObject)
 end
 
 local function New(ClassName: string, Properties: { [string]: any }): any
-    local Instance = Instance.new(ClassName)
+    local _Instance = Create(ClassName)
 
     if Templates[ClassName] then
-        FillInstance(Templates[ClassName], Instance)
+        FillInstance(Templates[ClassName], _Instance)
     end
-    FillInstance(Properties, Instance)
+    FillInstance(Properties, _Instance)
 
     if Properties["Parent"] and not Properties["ZIndex"] then
         pcall(function()
-            Instance.ZIndex = Properties.Parent.ZIndex
+            _Instance.ZIndex = Properties.Parent.ZIndex
         end)
     end
 
-    return Instance
+    return _Instance
 end
 
 --// Main Instances \\-
 local function SafeParentUI(Instance: Instance, Parent: Instance | () -> Instance)
-    local success, _error = pcall(function()
+    local success,_ = pcall(function()
         if not Parent then
             Parent = CoreGui
         end
@@ -1253,7 +1266,7 @@ local function ParentUI(UI: Instance, SkipHiddenUI: boolean?)
 end
 
 local ScreenGui = New("ScreenGui", {
-    Name = "Obsidian",
+    Name = game:GetService("HttpService"):GenerateGUID(false),
     DisplayOrder = 999,
     ResetOnSpawn = false,
 })
@@ -1352,13 +1365,22 @@ function Library:GetKeyString(KeyCode: Enum.KeyCode)
     return KeyCode.Name
 end
 
+workspace:GetPropertyChangedSignal("CurrentCamera"):Connect(function()
+    if Library.Unloaded then
+        return
+    end
+
+	CurrentCamera = workspace.CurrentCamera
+end)
+
+
 function Library:GetTextBounds(Text: string, Font: Font, Size: number, Width: number?): (number, number)
-    local Params = Instance.new("GetTextBoundsParams")
+    local Params = Create("GetTextBoundsParams")
     Params.Text = Text
     Params.RichText = true
     Params.Font = Font
     Params.Size = Size
-    Params.Width = Width or workspace.CurrentCamera.ViewportSize.X - 32
+    Params.Width = Width or CurrentCamera.ViewportSize.X - 32
 
     local Bounds = TextService:GetTextBoundsAsync(Params)
     return Bounds.X, Bounds.Y
@@ -1420,11 +1442,7 @@ function Library:MakeDraggable(UI: GuiObject, DragFrame: GuiObject, IgnoreToggle
         end)
     end)
     Library:GiveSignal(UserInputService.InputChanged:Connect(function(Input: InputObject)
-        if
-            (not IgnoreToggled and not Library.Toggled)
-            or (IsMainWindow and Library.CantDragForced)
-            or not (ScreenGui and ScreenGui.Parent)
-        then
+        if (not IgnoreToggled and not Library.Toggled) or (IsMainWindow and Library.CantDragForced) or not (ScreenGui and ScreenGui.Parent) then
             Dragging = false
             if Changed and Changed.Connected then
                 Changed:Disconnect()
@@ -1436,8 +1454,7 @@ function Library:MakeDraggable(UI: GuiObject, DragFrame: GuiObject, IgnoreToggle
 
         if Dragging and IsHoverInput(Input) then
             local Delta = Input.Position - StartPos
-            UI.Position =
-                UDim2.new(FramePos.X.Scale, FramePos.X.Offset + Delta.X, FramePos.Y.Scale, FramePos.Y.Offset + Delta.Y)
+            UI.Position = UDim2.new(FramePos.X.Scale, FramePos.X.Offset + Delta.X, FramePos.Y.Scale, FramePos.Y.Offset + Delta.Y)
         end
     end))
 end
@@ -1902,7 +1919,7 @@ TooltipLabel:GetPropertyChangedSignal("AbsolutePosition"):Connect(function()
         TooltipLabel.Text,
         TooltipLabel.FontFace,
         TooltipLabel.TextSize,
-        workspace.CurrentCamera.ViewportSize.X - TooltipLabel.AbsolutePosition.X - 4
+        CurrentCamera.ViewportSize.X - TooltipLabel.AbsolutePosition.X - 4
     )
 
     TooltipLabel.Size = UDim2.fromOffset(X + 8 * Library.DPIScale, Y + 4 * Library.DPIScale)
@@ -1936,11 +1953,7 @@ function Library:AddTooltip(InfoStr: string, DisabledInfoStr: string, HoverInsta
         TooltipLabel.Text = TooltipTable.Disabled and DisabledInfoStr or InfoStr
         TooltipLabel.Visible = true
 
-        while
-            Library.Toggled
-            and Library:MouseIsOverFrame(HoverInstance, Mouse)
-            and not (CurrentMenu and Library:MouseIsOverFrame(CurrentMenu.Menu, Mouse))
-        do
+        while Library.Toggled and Library:MouseIsOverFrame(HoverInstance, Mouse) and not (CurrentMenu and Library:MouseIsOverFrame(CurrentMenu.Menu, Mouse)) do
             TooltipLabel.Position = UDim2.fromOffset(
                 Mouse.X + (Library.ShowCustomCursor and 8 or 14),
                 Mouse.Y + (Library.ShowCustomCursor and 8 or 12)
@@ -2016,8 +2029,6 @@ function Library:Unload()
 
     Library.Unloaded = true
     ScreenGui:Destroy()
-
-    getgenv().Library = nil
 end
 
 local CheckIcon = Library:GetIcon("check")
@@ -2030,7 +2041,6 @@ function Library:SetIconModule(module: IconModule)
     FetchIcons = true
     Icons = module
 
-    -- Top ten fixes 🚀
     CheckIcon = Library:GetIcon("check")
     ArrowIcon = Library:GetIcon("chevron-up")
     ResizeIcon = Library:GetIcon("move-diagonal-2")
@@ -2170,8 +2180,7 @@ do
             end
 
             if SpecialKeysInput[Input.UserInputType] ~= nil then
-                return UserInputService:IsMouseButtonPressed(Input.UserInputType)
-                    and not UserInputService:GetFocusedTextBox()
+                return UserInputService:IsMouseButtonPressed(Input.UserInputType) and not UserInputService:GetFocusedTextBox()
             elseif Input.UserInputType == Enum.UserInputType.Keyboard then
                 return UserInputService:IsKeyDown(Input.KeyCode) and not UserInputService:GetFocusedTextBox()
             else
@@ -3386,20 +3395,20 @@ do
         InitEvents(Button)
 
         function Button:AddButton(...)
-            local Info = GetInfo(...)
+            local _Info = GetInfo(...)
 
             local SubButton = {
-                Text = Info.Text,
-                Func = Info.Func,
-                DoubleClick = Info.DoubleClick,
+                Text = _Info.Text,
+                Func = _Info.Func,
+                DoubleClick = _Info.DoubleClick,
 
-                Tooltip = Info.Tooltip,
-                DisabledTooltip = Info.DisabledTooltip,
+                Tooltip = _Info.Tooltip,
+                DisabledTooltip = _Info.DisabledTooltip,
                 TooltipTable = nil,
 
-                Risky = Info.Risky,
-                Disabled = Info.Disabled,
-                Visible = Info.Visible,
+                Risky = _Info.Risky,
+                Disabled = _Info.Disabled,
+                Visible = _Info.Visible,
 
                 Tween = nil,
                 Type = "SubButton",
@@ -3416,13 +3425,11 @@ do
 
                 StopTween(SubButton.Tween)
 
-                SubButton.Base.BackgroundColor3 = SubButton.Disabled and Library.Scheme.BackgroundColor
-                    or Library.Scheme.MainColor
+                SubButton.Base.BackgroundColor3 = SubButton.Disabled and Library.Scheme.BackgroundColor or Library.Scheme.MainColor
                 SubButton.Base.TextTransparency = SubButton.Disabled and 0.8 or 0.4
                 SubButton.Stroke.Transparency = SubButton.Disabled and 0.5 or 0
 
-                Library.Registry[SubButton.Base].BackgroundColor3 = SubButton.Disabled and "BackgroundColor"
-                    or "MainColor"
+                Library.Registry[SubButton.Base].BackgroundColor3 = SubButton.Disabled and "BackgroundColor" or "MainColor"
             end
 
             function SubButton:SetDisabled(Disabled: boolean)
@@ -3449,8 +3456,7 @@ do
             end
 
             if typeof(SubButton.Tooltip) == "string" or typeof(SubButton.DisabledTooltip) == "string" then
-                SubButton.TooltipTable =
-                    Library:AddTooltip(SubButton.Tooltip, SubButton.DisabledTooltip, SubButton.Base)
+                SubButton.TooltipTable = Library:AddTooltip(SubButton.Tooltip, SubButton.DisabledTooltip, SubButton.Base)
                 SubButton.TooltipTable.Disabled = SubButton.Disabled
             end
 
@@ -4852,7 +4858,7 @@ do
 
         local Viewport = {
             Object = ViewportObject,
-            Camera = if not Info.Camera then Instance.new("Camera") else Info.Camera,
+            Camera = if not Info.Camera then Create("Camera") else Info.Camera,
             Interactive = Info.Interactive,
             AutoFocus = Info.AutoFocus,
             Visible = Info.Visible,
@@ -5940,10 +5946,10 @@ end
 
 function Library:CreateWindow(WindowInfo)
     WindowInfo = Library:Validate(WindowInfo, Templates.Window)
-    local ViewportSize: Vector2 = workspace.CurrentCamera.ViewportSize
+    local ViewportSize: Vector2 = CurrentCamera.ViewportSize
     if RunService:IsStudio() and ViewportSize.X <= 5 and ViewportSize.Y <= 5 then
         repeat
-            ViewportSize = workspace.CurrentCamera.ViewportSize
+            ViewportSize = CurrentCamera.ViewportSize
             task.wait()
         until ViewportSize.X > 5 and ViewportSize.Y > 5
     end
@@ -6679,7 +6685,7 @@ function Library:CreateWindow(WindowInfo)
 
     function Window:ChangeTitle(title)
         assert(typeof(title) == "string", "Expected string for title got: " .. typeof(title))
-        
+
         WindowTitle.Text = title
         WindowInfo.Title = title
     end
@@ -7807,5 +7813,4 @@ Library:GiveSignal(Players.PlayerRemoving:Connect(OnPlayerChange))
 Library:GiveSignal(Teams.ChildAdded:Connect(OnTeamChange))
 Library:GiveSignal(Teams.ChildRemoved:Connect(OnTeamChange))
 
-getgenv().Library = Library
 return Library
