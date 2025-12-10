@@ -11,12 +11,8 @@ local TextService: TextService = cloneref(game:GetService("TextService"))
 local Teams: Teams = cloneref(game:GetService("Teams"))
 local TweenService: TweenService = cloneref(game:GetService("TweenService"))
 
-local getgenv = getgenv or function()
-    return shared
-end
-
 local setclipboard = setclipboard or set_clipboard or writeclipboard or write_clipboard or nil
-local protectgui = protectgui or (syn and syn.protect_gui) or function(...)
+local protectgui = protectgui or protect_gui or (syn and syn.protect_gui) or function(...)
     return (...)
 end
 
@@ -24,7 +20,12 @@ local gethui = gethui or get_hui or gethiddenui or get_hidden_ui or function()
     return CoreGui
 end
 
-local function Create(Type : string)
+local isfolder = isfolder or is_folder
+local makefolder = makefolder or make_folder or createfolder or create_folder
+local writefile = writefile or write_file or writefileasync or write_file_async
+local getcustomasset = getcustomasset or get_custom_asset
+
+local function Create(Type: string)
 	return cloneref(Instance.new(Type))
 end
 
@@ -39,7 +40,7 @@ local Toggles = {}
 local Options = {}
 local Tooltips = {}
 
-local BaseURL = "https://raw.githubusercontent.com/deividcomsono/Obsidian/refs/heads/main/"
+local BaseURL = "https://raw.githubusercontent.com/nikoladhima/NS-Library/refs/heads/main/"
 local CustomImageManager = {}
 local CustomImageManagerAssets = {
     TransparencyTexture = {
@@ -60,8 +61,6 @@ local CustomImageManagerAssets = {
 }
 do
     local function RecursiveCreatePath(Path: string, IsFile: boolean?)
-        local isfolder = isfolder or is_folder
-        local makefolder = makefolder or make_folder or createfolder or create_folder
         if not isfolder or not makefolder then
             return
         end
@@ -1123,9 +1122,7 @@ type IconModule = {
 }
 
 local FetchIcons, Icons = pcall(function()
-    return (loadstring(
-        game:HttpGet("https://raw.githubusercontent.com/deividcomsono/lucide-roblox-direct/refs/heads/main/source.lua")
-    ) :: () -> IconModule)()
+    return (loadstring(game:HttpGet("https://raw.githubusercontent.com/nikoladhima/lucide-roblox-direct/refs/heads/main/source.lua")) :: () -> IconModule)()
 end)
 
 function Library:GetIcon(IconName: string)
@@ -5862,11 +5859,9 @@ function Library:Notify(...)
             DeleteConnection:Disconnect()
         end
 
-        TweenService
-            :Create(Background, Library.NotifyTweenInfo, {
-                Position = Library.NotifySide:lower() == "left" and UDim2.new(-1, -6, 0, -2) or UDim2.new(1, 6, 0, -2),
-            })
-            :Play()
+        TweenService:Create(Background, Library.NotifyTweenInfo, {
+            Position = Library.NotifySide:lower() == "left" and UDim2.new(-1, -6, 0, -2) or UDim2.new(1, 6, 0, -2),
+        }) :Play()
         
         task.delay(Library.NotifyTweenInfo.Time, function()
             Library.Notifications[FakeBackground] = nil
@@ -5928,11 +5923,9 @@ function Library:Notify(...)
                 task.wait()
             until DeletedInstance or Data.Destroyed
         else
-            TweenService
-                :Create(TimerFill, TweenInfo.new(Data.Time, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut), {
-                    Size = UDim2.fromScale(0, 1),
-                })
-                :Play()
+            TweenService:Create(TimerFill, TweenInfo.new(Data.Time, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut), {
+                Size = UDim2.fromScale(0, 1),
+            }):Play()
             task.wait(Data.Time)
         end
 
@@ -6010,8 +6003,7 @@ function Library:CreateWindow(WindowInfo)
     end
 
     local InitialFrameWidth = math.max(WindowInfo.Size.X.Offset, LayoutState.MinWidth + LayoutState.MinContentWidth)
-    local InitialExpandedWidth = WindowInfo.InitialSidebarWidth
-        or math.floor(InitialFrameWidth * (WindowInfo.InitialSidebarScale or 0.3))
+    local InitialExpandedWidth = WindowInfo.InitialSidebarWidth or math.floor(InitialFrameWidth * (WindowInfo.InitialSidebarScale or 0.3))
     LayoutState.CurrentWidth = math.max(LayoutState.MinWidth, InitialExpandedWidth)
     LayoutState.LastExpandedWidth = LayoutState.CurrentWidth
 
@@ -6571,10 +6563,7 @@ function Library:CreateWindow(WindowInfo)
                     return
                 end
 
-                if
-                    input.UserInputType ~= Enum.UserInputType.MouseButton1
-                    and input.UserInputType ~= Enum.UserInputType.Touch
-                then
+                if input.UserInputType ~= Enum.UserInputType.MouseButton1 and input.UserInputType ~= Enum.UserInputType.Touch then
                     return
                 end
 
@@ -6632,10 +6621,7 @@ function Library:CreateWindow(WindowInfo)
                     return
                 end
 
-                if
-                    input.UserInputType == Enum.UserInputType.MouseButton1
-                    or input.UserInputType == Enum.UserInputType.Touch
-                    or input == SidebarDrag.TouchId
+                if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch or input == SidebarDrag.TouchId
                 then
                     SidebarDrag.Active = false
                     SidebarDrag.TouchId = nil
@@ -6952,18 +6938,13 @@ function Library:CreateWindow(WindowInfo)
 		    WarningText.Text = Tab.WarningBox.Text
 		    Tab:Resize(true)
 
-		    WarningBox.BackgroundColor3 = Tab.WarningBox.IsNormal == true and Library.Scheme.BackgroundColor
-		        or Color3.fromRGB(127, 0, 0)
+		    WarningBox.BackgroundColor3 = Tab.WarningBox.IsNormal == true and Library.Scheme.BackgroundColor or Color3.fromRGB(127, 0, 0)
 
-		    WarningBoxBackground.BackgroundColor3 = Tab.WarningBox.IsNormal == true and Library.Scheme.Dark
-		        or Color3.fromRGB(169, 0, 0)
-	        WarningBoxOutline.BackgroundColor3 = Tab.WarningBox.IsNormal == true and Library.Scheme.OutlineColor
-	            or Color3.fromRGB(255, 50, 50)
-		    
-		    WarningTitle.TextColor3 = Tab.WarningBox.IsNormal == true and Library.Scheme.FontColor
-		        or Color3.fromRGB(255, 50, 50)
-		    WarningStroke.Color = Tab.WarningBox.IsNormal == true and Library.Scheme.OutlineColor
-		        or Color3.fromRGB(169, 0, 0)
+		    WarningBoxBackground.BackgroundColor3 = Tab.WarningBox.IsNormal == true and Library.Scheme.Dark or Color3.fromRGB(169, 0, 0)
+	        WarningBoxOutline.BackgroundColor3 = Tab.WarningBox.IsNormal == true and Library.Scheme.OutlineColor or Color3.fromRGB(255, 50, 50)
+   
+		    WarningTitle.TextColor3 = Tab.WarningBox.IsNormal == true and Library.Scheme.FontColor or Color3.fromRGB(255, 50, 50)
+		    WarningStroke.Color = Tab.WarningBox.IsNormal == true and Library.Scheme.OutlineColor or Color3.fromRGB(169, 0, 0)
 
 		    if not Library.Registry[WarningBox] then
 		        Library:AddToRegistry(WarningBox, {})
@@ -6988,7 +6969,7 @@ function Library:CreateWindow(WindowInfo)
 		    Library.Registry[WarningBoxBackground].BackgroundColor3 = function()
 		        return Tab.WarningBox.IsNormal == true and Library.Scheme.Dark or Color3.fromRGB(169, 0, 0)
 		    end
-		    
+
 	        Library.Registry[WarningBoxOutline].BackgroundColor3 = function()
 	            return Tab.WarningBox.IsNormal == true and Library.Scheme.OutlineColor or Color3.fromRGB(255, 50, 50)
 	        end
@@ -7253,7 +7234,7 @@ function Library:CreateWindow(WindowInfo)
                     Parent = Container,
                 })
 
-                local Tab = {
+                local TabTable = {
                     ButtonHolder = Button,
                     Container = Container,
 
@@ -7262,7 +7243,7 @@ function Library:CreateWindow(WindowInfo)
                     DependencyBoxes = {},
                 }
 
-                function Tab:Show()
+                function TabTable:Show()
                     if Tabbox.ActiveTab then
                         Tabbox.ActiveTab:Hide()
                     end
@@ -7273,11 +7254,11 @@ function Library:CreateWindow(WindowInfo)
 
                     Container.Visible = true
 
-                    Tabbox.ActiveTab = Tab
-                    Tab:Resize()
+                    Tabbox.ActiveTab = TabTable
+                    TabTable:Resize()
                 end
 
-                function Tab:Hide()
+                function TabTable:Hide()
                     Button.BackgroundTransparency = 0
                     Button.TextTransparency = 0.5
                     Line.Visible = true
@@ -7287,27 +7268,29 @@ function Library:CreateWindow(WindowInfo)
                 end
 
                 local function ResizeTab()
-                    if Tabbox.ActiveTab ~= Tab then
+                    if Tabbox.ActiveTab ~= TabTable then
                         return
                     end
 
                     Background.Size = UDim2.new(1, 0, 0, List.AbsoluteContentSize.Y + 53 * Library.DPIScale)
                 end
 
-                function Tab:Resize() task.defer(ResizeTab) end
+                function TabTable:Resize()
+                    task.defer(ResizeTab)
+                end
 
                 --// Execution \\--
                 if not Tabbox.ActiveTab then
-                    Tab:Show()
+                    TabTable:Show()
                 end
 
-                Button.MouseButton1Click:Connect(Tab.Show)
+                Button.MouseButton1Click:Connect(TabTable.Show)
 
-                setmetatable(Tab, BaseGroupbox)
+                setmetatable(TabTable, BaseGroupbox)
 
-                Tabbox.Tabs[Name] = Tab
+                Tabbox.Tabs[Name] = TabTable
 
-                return Tab
+                return TabTable
             end
 
             if Info.Name then
@@ -7730,9 +7713,9 @@ function Library:CreateWindow(WindowInfo)
             Library:Toggle()
         end)
 
-        local LockButton = Library:AddDraggableButton("Lock", function(self)
+        local LockButton = Library:AddDraggableButton("Lock", function(_self)
             Library.CantDragForced = not Library.CantDragForced
-            self:SetText(Library.CantDragForced and "Unlock" or "Lock")
+            _self:SetText(Library.CantDragForced and "Unlock" or "Lock")
         end)
 
         if WindowInfo.MobileButtonsSide == "Right" then
@@ -7760,13 +7743,7 @@ function Library:CreateWindow(WindowInfo)
             return
         end
 
-        if
-            (
-                typeof(Library.ToggleKeybind) == "table"
-                and Library.ToggleKeybind.Type == "KeyPicker"
-                and Input.KeyCode.Name == Library.ToggleKeybind.Value
-            ) or Input.KeyCode == Library.ToggleKeybind
-        then
+        if (typeof(Library.ToggleKeybind) == "table" and Library.ToggleKeybind.Type == "KeyPicker" and Input.KeyCode.Name == Library.ToggleKeybind.Value) or Input.KeyCode == Library.ToggleKeybind then
             Library.Toggle()
         end
     end))
